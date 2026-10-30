@@ -124,3 +124,22 @@ it('auto rotates a large image without an out of order read error', function (in
     'orientation 7' => [7, 1500, 2000],
     'orientation 8' => [8, 1500, 2000],
 ])->with(['jpg', 'tiff']);
+
+it('reads the exif orientation when fileinfo cannot identify the exif data', function (ImageDriver $driver) {
+    set_error_handler(function (int $level, string $message, string $file, int $line): bool {
+        if (! (error_reporting() & $level)) {
+            return true;
+        }
+
+        throw new ErrorException($message, 0, $level, $file, $line);
+    });
+
+    try {
+        $image = $driver->loadFile(getTestFile('exif-fileinfo-limit.jpg'));
+    } finally {
+        restore_error_handler();
+    }
+
+    expect($image->getWidth())->toBe(40)
+        ->and($image->getHeight())->toBe(80);
+})->with('drivers');
